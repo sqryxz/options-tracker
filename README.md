@@ -48,7 +48,7 @@ This repository includes a GitHub Actions workflow that automatically runs the o
 4. Add the following secrets:
    - `DERIBIT_API_KEY`: Your Deribit API key
    - `DERIBIT_API_SECRET`: Your Deribit API secret
-   - `GITHUB_PAT`: A Personal Access Token with repo scope (see instructions below)
+   - `ACTIONS_PAT`: A Personal Access Token with repo scope (see instructions below)
 5. The workflow will run automatically every day at 00:00 UTC
 6. You can also manually trigger the workflow from the "Actions" tab
 
@@ -62,7 +62,7 @@ To allow GitHub Actions to push changes to your repository, you need to create a
 4. Give it a descriptive name like "Options Tracker Workflow"
 5. Select the "repo" scope to allow the token to push to your repositories
 6. Click "Generate token" and copy the token
-7. Add this token as a repository secret named `GITHUB_PAT`
+7. Add this token as a repository secret named `ACTIONS_PAT`
 
 The workflow will:
 1. Run the options tracker for both BTC and ETH

@@ -39,7 +39,7 @@ jobs:
       
       - name: Commit and push changes
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GITHUB_TOKEN: ${{ secrets.ACTIONS_PAT }}
         run: |
           git config --local user.email "github-actions@github.com"
           git config --local user.name "GitHub Actions"
