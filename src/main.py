@@ -103,7 +103,11 @@ def save_summary_to_csv(summary, output_path):
         "total_volume": summary["volume_statistics"]["total_volume"],
         "calls_volume": summary["volume_statistics"]["calls_volume"],
         "puts_volume": summary["volume_statistics"]["puts_volume"],
-        "volume_put_call_ratio": summary["volume_statistics"]["volume_put_call_ratio"]
+        "volume_put_call_ratio": summary["volume_statistics"]["volume_put_call_ratio"],
+        # Add implied volatility metrics
+        "average_iv": summary["implied_volatility_summary"]["average_iv"],
+        "min_iv": summary["implied_volatility_summary"]["min_iv"],
+        "max_iv": summary["implied_volatility_summary"]["max_iv"]
     }
     
     stats_df = pd.DataFrame([stats])

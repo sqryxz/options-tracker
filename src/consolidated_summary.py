@@ -19,6 +19,7 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
+import numpy as np
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -132,7 +133,10 @@ def generate_consolidated_summary(btc_data, eth_data, output_dir):
             'Total Volume',
             'Calls Volume',
             'Puts Volume',
-            'Volume Put/Call Ratio'
+            'Volume Put/Call Ratio',
+            'Average IV',
+            'Min IV',
+            'Max IV'
         ],
         'BTC': [
             f"${btc_summary['current_price'].iloc[0]:,.2f}",
@@ -143,7 +147,10 @@ def generate_consolidated_summary(btc_data, eth_data, output_dir):
             f"{btc_summary['total_volume'].iloc[0]:,.0f}",
             f"{btc_summary['calls_volume'].iloc[0]:,.0f}",
             f"{btc_summary['puts_volume'].iloc[0]:,.0f}",
-            f"{btc_summary['volume_put_call_ratio'].iloc[0]:.2f}"
+            f"{btc_summary['volume_put_call_ratio'].iloc[0]:.2f}",
+            f"{btc_summary['average_iv'].iloc[0]:.2%}" if 'average_iv' in btc_summary.columns and not pd.isna(btc_summary['average_iv'].iloc[0]) else "N/A",
+            f"{btc_summary['min_iv'].iloc[0]:.2%}" if 'min_iv' in btc_summary.columns and not pd.isna(btc_summary['min_iv'].iloc[0]) else "N/A",
+            f"{btc_summary['max_iv'].iloc[0]:.2%}" if 'max_iv' in btc_summary.columns and not pd.isna(btc_summary['max_iv'].iloc[0]) else "N/A"
         ],
         'ETH': [
             f"${eth_summary['current_price'].iloc[0]:,.2f}",
@@ -154,7 +161,10 @@ def generate_consolidated_summary(btc_data, eth_data, output_dir):
             f"{eth_summary['total_volume'].iloc[0]:,.0f}",
             f"{eth_summary['calls_volume'].iloc[0]:,.0f}",
             f"{eth_summary['puts_volume'].iloc[0]:,.0f}",
-            f"{eth_summary['volume_put_call_ratio'].iloc[0]:.2f}"
+            f"{eth_summary['volume_put_call_ratio'].iloc[0]:.2f}",
+            f"{eth_summary['average_iv'].iloc[0]:.2%}" if 'average_iv' in eth_summary.columns and not pd.isna(eth_summary['average_iv'].iloc[0]) else "N/A",
+            f"{eth_summary['min_iv'].iloc[0]:.2%}" if 'min_iv' in eth_summary.columns and not pd.isna(eth_summary['min_iv'].iloc[0]) else "N/A",
+            f"{eth_summary['max_iv'].iloc[0]:.2%}" if 'max_iv' in eth_summary.columns and not pd.isna(eth_summary['max_iv'].iloc[0]) else "N/A"
         ]
     })
     
@@ -210,6 +220,73 @@ def create_comparison_plots(btc_data, eth_data, output_dir):
     """Create comparison plots for BTC and ETH."""
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     plot_files = {}
+    
+    # Plot key ratios comparison
+    btc_summary = btc_data.get('summary')
+    eth_summary = eth_data.get('summary')
+    
+    if btc_summary is not None and eth_summary is not None:
+        # Check if implied volatility data is available
+        has_iv_data = ('average_iv' in btc_summary.columns and 'average_iv' in eth_summary.columns and
+                      not pd.isna(btc_summary['average_iv'].iloc[0]) and not pd.isna(eth_summary['average_iv'].iloc[0]))
+        
+        if has_iv_data:
+            # Create implied volatility comparison plot
+            plt.figure(figsize=(10, 6))
+            
+            # Extract IV data
+            btc_avg_iv = btc_summary['average_iv'].iloc[0]
+            btc_min_iv = btc_summary['min_iv'].iloc[0]
+            btc_max_iv = btc_summary['max_iv'].iloc[0]
+            
+            eth_avg_iv = eth_summary['average_iv'].iloc[0]
+            eth_min_iv = eth_summary['min_iv'].iloc[0]
+            eth_max_iv = eth_summary['max_iv'].iloc[0]
+            
+            # Create bar chart
+            labels = ['Average IV', 'Min IV', 'Max IV']
+            btc_values = [btc_avg_iv, btc_min_iv, btc_max_iv]
+            eth_values = [eth_avg_iv, eth_min_iv, eth_max_iv]
+            
+            x = np.arange(len(labels))
+            width = 0.35
+            
+            fig, ax = plt.subplots(figsize=(12, 7))
+            rects1 = ax.bar(x - width/2, btc_values, width, label='BTC', color='orange', alpha=0.7)
+            rects2 = ax.bar(x + width/2, eth_values, width, label='ETH', color='blue', alpha=0.7)
+            
+            # Add labels and formatting
+            ax.set_ylabel('Implied Volatility')
+            ax.set_title('Implied Volatility Comparison: BTC vs ETH')
+            ax.set_xticks(x)
+            ax.set_xticklabels(labels)
+            ax.legend()
+            
+            # Format y-axis as percentage
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f'{y:.1%}'))
+            
+            # Add value labels on bars
+            def autolabel(rects):
+                for rect in rects:
+                    height = rect.get_height()
+                    ax.annotate(f'{height:.1%}',
+                                xy=(rect.get_x() + rect.get_width()/2, height),
+                                xytext=(0, 3),  # 3 points vertical offset
+                                textcoords="offset points",
+                                ha='center', va='bottom')
+            
+            autolabel(rects1)
+            autolabel(rects2)
+            
+            plt.tight_layout()
+            
+            # Save the plot
+            iv_plot_file = os.path.join(output_dir, f"iv_comparison_{timestamp}.png")
+            plt.savefig(iv_plot_file)
+            plt.close()
+            
+            plot_files['iv_comparison'] = iv_plot_file
+            print(f"Saved implied volatility comparison plot to {iv_plot_file}")
     
     # Plot put/call ratios
     if 'put_call' in btc_data and 'put_call' in eth_data:
@@ -325,6 +402,26 @@ This report provides a consolidated view of options data for Bitcoin (BTC) and E
     # Add each row from the consolidated DataFrame
     for _, row in consolidated.iterrows():
         md_content += f"| {row['Metric']} | {row['BTC']} | {row['ETH']} |\n"
+    
+    # Add implied volatility section
+    md_content += "\n## Implied Volatility Analysis\n\n"
+    md_content += "Implied volatility (IV) represents the market's expectation of future price movement and volatility. "
+    md_content += "Higher IV indicates greater expected price movement and typically higher option premiums.\n\n"
+    
+    # Extract IV metrics from consolidated data
+    btc_avg_iv = next((row['BTC'] for _, row in consolidated.iterrows() if row['Metric'] == 'Average IV'), 'N/A')
+    eth_avg_iv = next((row['ETH'] for _, row in consolidated.iterrows() if row['Metric'] == 'Average IV'), 'N/A')
+    
+    md_content += f"- **BTC Average IV**: {btc_avg_iv}\n"
+    md_content += f"- **ETH Average IV**: {eth_avg_iv}\n\n"
+    
+    md_content += "The IV spread between different strikes indicates market sentiment about potential price directions. "
+    md_content += "A higher IV for out-of-the-money puts compared to calls suggests a bearish skew, while the opposite suggests a bullish skew.\n\n"
+    
+    # Add IV comparison plot if available
+    if 'iv_comparison' in plot_files:
+        md_content += f"### BTC vs ETH: Implied Volatility Comparison\n\n"
+        md_content += f"![Implied Volatility Comparison]({os.path.basename(plot_files['iv_comparison'])})\n\n"
     
     # Add plots
     md_content += "\n## Comparison Charts\n\n"
