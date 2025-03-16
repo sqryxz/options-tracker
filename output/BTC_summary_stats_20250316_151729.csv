@@ -1,0 +1,2 @@
+timestamp,currency,current_price,total_open_interest,calls_open_interest,puts_open_interest,put_call_ratio,total_volume,calls_volume,puts_volume,volume_put_call_ratio
+2025-03-16T15:17:29.342977,BTC,84124.77,294140.1,193423.5,100716.6,0.5207050849560679,4908.5,3259.8,1648.6999999999998,0.5057672249831278

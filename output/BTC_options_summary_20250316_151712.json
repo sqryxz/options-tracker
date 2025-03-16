@@ -1,0 +1,216 @@
+{
+  "timestamp": "2025-03-16T15:17:12.219632",
+  "currency": "BTC",
+  "current_price": 84120.55,
+  "open_interest_summary": {
+    "total_open_interest": 294140.1,
+    "calls_open_interest": 193423.5,
+    "puts_open_interest": 100716.6,
+    "put_call_ratio": 0.5207050849560679,
+    "top_expirations": {
+      "2025-03-28": 136156.0,
+      "2025-06-27": 54784.0,
+      "2025-04-25": 37077.1,
+      "2025-03-21": 16788.2,
+      "2025-09-26": 14045.7
+    },
+    "top_strikes": {
+      "100000.0": 19887.7,
+      "120000.0": 17529.1,
+      "80000.0": 13968.300000000001,
+      "85000.0": 13442.5,
+      "70000.0": 11547.5
+    }
+  },
+  "implied_volatility_summary": {
+    "average_iv": 63.959648648648646,
+    "min_iv": 21.43,
+    "max_iv": 174.23,
+    "iv_by_expiration": {
+      "2025-03-16": 53.805416666666666,
+      "2025-03-17": 55.76315789473684,
+      "2025-03-18": 56.022777777777776,
+      "2025-03-21": 64.3925,
+      "2025-03-28": 83.05499999999999,
+      "2025-04-04": 55.43107142857143,
+      "2025-04-25": 60.824222222222225,
+      "2025-05-30": 59.884473684210526,
+      "2025-06-27": 67.71722222222223,
+      "2025-09-26": 63.33205882352941,
+      "2025-12-26": 62.649722222222216
+    },
+    "iv_by_strike": {
+      "70000.0": 60.88875,
+      "72000.0": 76.00750000000001,
+      "74000.0": 71.69428571428571,
+      "75000.0": 56.95125,
+      "76000.0": 64.96375,
+      "77000.0": 62.46333333333333,
+      "78000.0": 59.129999999999995,
+      "79000.0": 57.0325,
+      "80000.0": 54.49090909090909,
+      "81000.0": 52.086,
+      "82000.0": 51.42125,
+      "82500.0": 43.8,
+      "83000.0": 49.343333333333334,
+      "83500.0": 31.13,
+      "84000.0": 47.355,
+      "84500.0": 21.43,
+      "85000.0": 49.875,
+      "85500.0": 36.46,
+      "86000.0": 49.120000000000005,
+      "87000.0": 50.29,
+      "88000.0": 51.91375,
+      "89000.0": 52.224000000000004,
+      "90000.0": 53.625454545454545,
+      "91000.0": 52.685,
+      "92000.0": 53.86125,
+      "93000.0": 53.599999999999994,
+      "94000.0": 55.4975,
+      "95000.0": 54.56875,
+      "96000.0": 59.65714285714286,
+      "97000.0": 59.91,
+      "98000.0": 58.580000000000005,
+      "99000.0": 63.13,
+      "100000.0": 56.225
+    }
+  },
+  "volume_statistics": {
+    "total_volume": 4908.5,
+    "calls_volume": 3259.8,
+    "puts_volume": 1648.6999999999998,
+    "volume_put_call_ratio": 0.5057672249831278
+  },
+  "top_open_interest": {
+    "calls": [
+      {
+        "instrument_name": "BTC-28MAR25-100000-C",
+        "strike": 100000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 10665.3
+      },
+      {
+        "instrument_name": "BTC-28MAR25-120000-C",
+        "strike": 120000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 9231.0
+      },
+      {
+        "instrument_name": "BTC-28MAR25-150000-C",
+        "strike": 150000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 6262.6
+      },
+      {
+        "instrument_name": "BTC-28MAR25-110000-C",
+        "strike": 110000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 6117.8
+      },
+      {
+        "instrument_name": "BTC-28MAR25-130000-C",
+        "strike": 130000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 4596.3
+      }
+    ],
+    "puts": [
+      {
+        "instrument_name": "BTC-28MAR25-75000-P",
+        "strike": 75000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 3833.7
+      },
+      {
+        "instrument_name": "BTC-28MAR25-60000-P",
+        "strike": 60000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 3811.7
+      },
+      {
+        "instrument_name": "BTC-28MAR25-95000-P",
+        "strike": 95000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 3237.9
+      },
+      {
+        "instrument_name": "BTC-28MAR25-70000-P",
+        "strike": 70000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 3085.7
+      },
+      {
+        "instrument_name": "BTC-28MAR25-50000-P",
+        "strike": 50000.0,
+        "expiration_date": "2025-03-28",
+        "open_interest": 2974.6
+      }
+    ]
+  },
+  "top_volume": {
+    "calls": [
+      {
+        "instrument_name": "BTC-18MAR25-86000-C",
+        "strike": 86000.0,
+        "expiration_date": "2025-03-18",
+        "volume": 605.1
+      },
+      {
+        "instrument_name": "BTC-16MAR25-86000-C",
+        "strike": 86000.0,
+        "expiration_date": "2025-03-16",
+        "volume": 274.1
+      },
+      {
+        "instrument_name": "BTC-4APR25-94000-C",
+        "strike": 94000.0,
+        "expiration_date": "2025-04-04",
+        "volume": 206.3
+      },
+      {
+        "instrument_name": "BTC-16MAR25-84500-C",
+        "strike": 84500.0,
+        "expiration_date": "2025-03-16",
+        "volume": 146.2
+      },
+      {
+        "instrument_name": "BTC-4APR25-90000-C",
+        "strike": 90000.0,
+        "expiration_date": "2025-04-04",
+        "volume": 138.8
+      }
+    ],
+    "puts": [
+      {
+        "instrument_name": "BTC-16MAR25-84000-P",
+        "strike": 84000.0,
+        "expiration_date": "2025-03-16",
+        "volume": 117.6
+      },
+      {
+        "instrument_name": "BTC-16MAR25-83500-P",
+        "strike": 83500.0,
+        "expiration_date": "2025-03-16",
+        "volume": 100.0
+      },
+      {
+        "instrument_name": "BTC-16MAR25-83000-P",
+        "strike": 83000.0,
+        "expiration_date": "2025-03-16",
+        "volume": 89.4
+      },
+      {
+        "instrument_name": "BTC-16MAR25-82500-P",
+        "strike": 82500.0,
+        "expiration_date": "2025-03-16",
+        "volume": 86.7
+      },
+      {
+        "instrument_name": "BTC-28MAR25-80000-P",
+        "strike": 80000.0,
+        "expiration_date": "2025-03-28",
+        "volume": 85.8
+      }
+    ]
+  }
+}
