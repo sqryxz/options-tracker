@@ -1,0 +1,43 @@
+name: Options Tracker
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  run-options-tracker:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      
+      - name: Run options tracker
+        env:
+          DERIBIT_API_KEY: ${{ secrets.DERIBIT_API_KEY }}
+          DERIBIT_API_SECRET: ${{ secrets.DERIBIT_API_SECRET }}
+        run: |
+          python3 src/main.py --currency BTC --output csv --plot --output-dir output
+          python3 src/main.py --currency ETH --output csv --plot --output-dir output
+      
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add output/
+          git commit -m "Update options data $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push 
