@@ -13,6 +13,12 @@ import argparse
 import re
 import base64
 from io import BytesIO
+import markdown
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -36,6 +42,12 @@ def parse_arguments():
         "--markdown", 
         action="store_true",
         help="Generate a markdown report"
+    )
+    
+    parser.add_argument(
+        "--pdf", 
+        action="store_true",
+        help="Generate a PDF report"
     )
     
     return parser.parse_args()
@@ -382,6 +394,140 @@ This report provides a consolidated view of options data for Bitcoin (BTC) and E
     print(f"Saved markdown report to {md_file}")
     return md_file
 
+def generate_pdf_report(md_file, plot_files, output_dir):
+    """Generate a PDF report from the markdown file."""
+    # Get the timestamp from the markdown filename
+    timestamp = os.path.basename(md_file).replace("consolidated_report_", "").replace(".md", "")
+    
+    # Create the PDF filename
+    pdf_file = os.path.join(output_dir, f"consolidated_report_{timestamp}.pdf")
+    
+    # Read the markdown content
+    with open(md_file, 'r') as f:
+        md_content = f.read()
+    
+    # Create the PDF document
+    doc = SimpleDocTemplate(pdf_file, pagesize=letter)
+    styles = getSampleStyleSheet()
+    
+    # Create custom styles
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Title'],
+        fontSize=18,
+        spaceAfter=12
+    )
+    
+    heading1_style = ParagraphStyle(
+        'Heading1',
+        parent=styles['Heading1'],
+        fontSize=16,
+        spaceAfter=10,
+        spaceBefore=20
+    )
+    
+    heading2_style = ParagraphStyle(
+        'Heading2',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=8,
+        spaceBefore=15
+    )
+    
+    normal_style = styles['Normal']
+    
+    # Parse the markdown content
+    lines = md_content.split('\n')
+    
+    # Create a list to hold the PDF elements
+    elements = []
+    
+    # Process the markdown content
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Title (# Heading)
+        if line.startswith('# '):
+            elements.append(Paragraph(line[2:], title_style))
+            elements.append(Spacer(1, 0.2 * inch))
+        
+        # Heading 1 (## Heading)
+        elif line.startswith('## '):
+            elements.append(Paragraph(line[3:], heading1_style))
+        
+        # Heading 2 (### Heading)
+        elif line.startswith('### '):
+            elements.append(Paragraph(line[4:], heading2_style))
+        
+        # Table
+        elif line.startswith('|'):
+            # Find the end of the table
+            table_lines = []
+            while i < len(lines) and lines[i].strip().startswith('|'):
+                table_lines.append(lines[i])
+                i += 1
+            i -= 1  # Adjust for the outer loop increment
+            
+            # Process the table
+            if len(table_lines) >= 3:  # Header, separator, and at least one row
+                # Parse the table
+                table_data = []
+                for table_line in table_lines:
+                    if '|-' in table_line:  # Skip separator line
+                        continue
+                    cells = [cell.strip() for cell in table_line.split('|')[1:-1]]
+                    table_data.append(cells)
+                
+                # Create the table
+                if table_data:
+                    table = Table(table_data, colWidths=[2.5*inch, 1.5*inch, 1.5*inch])
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ]))
+                    elements.append(table)
+                    elements.append(Spacer(1, 0.2 * inch))
+        
+        # Image
+        elif line.startswith('!['):
+            # Extract image path
+            image_path = line.split('(')[1].split(')')[0]
+            
+            # Find the actual image path from plot_files
+            actual_path = None
+            for _, path in plot_files.items():
+                if os.path.basename(path) == image_path:
+                    actual_path = path
+                    break
+            
+            if actual_path and os.path.exists(actual_path):
+                img = Image(actual_path, width=6*inch, height=4*inch)
+                elements.append(img)
+                elements.append(Spacer(1, 0.2 * inch))
+        
+        # Normal paragraph
+        elif line and not line.startswith('---'):
+            elements.append(Paragraph(line, normal_style))
+            elements.append(Spacer(1, 0.1 * inch))
+        
+        i += 1
+    
+    # Add footer
+    elements.append(Spacer(1, 0.5 * inch))
+    elements.append(Paragraph(f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", styles['Italic']))
+    
+    # Build the PDF
+    doc.build(elements)
+    
+    print(f"Saved PDF report to {pdf_file}")
+    return pdf_file
+
 def main():
     """Main function to generate consolidated summary."""
     args = parse_arguments()
@@ -411,8 +557,15 @@ def main():
         print_consolidated_summary(summary_data['consolidated'])
     
     # Generate markdown report if requested
+    md_file = None
     if args.markdown and summary_data:
-        generate_markdown_report(summary_data, plot_files, output_dir)
+        md_file = generate_markdown_report(summary_data, plot_files, output_dir)
+    
+    # Generate PDF report if requested
+    if args.pdf and summary_data:
+        if not md_file:
+            md_file = generate_markdown_report(summary_data, plot_files, output_dir)
+        generate_pdf_report(md_file, plot_files, output_dir)
     
     return 0
 

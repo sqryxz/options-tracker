@@ -4,9 +4,24 @@ import os
 import sys
 import subprocess
 from datetime import datetime
+import argparse
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description="Run daily options data collection and consolidated summary")
+    
+    parser.add_argument(
+        "--no-pdf", 
+        action="store_true",
+        help="Skip PDF report generation"
+    )
+    
+    return parser.parse_args()
 
 def main():
     """Run the daily options data collection and consolidated summary."""
+    args = parse_arguments()
+    
     print("="*80)
     print(f"DAILY CRYPTO OPTIONS SUMMARY - {datetime.now().strftime('%Y-%m-%d')}")
     print("="*80)
@@ -42,6 +57,11 @@ def main():
     # Step 3: Generate consolidated summary
     print("\nStep 3: Generating consolidated summary...")
     summary_cmd = ["python3", "src/consolidated_summary.py", "--markdown"]
+    
+    # Add PDF option if not disabled
+    if not args.no_pdf:
+        summary_cmd.append("--pdf")
+    
     summary_result = subprocess.run(summary_cmd, capture_output=True, text=True)
     
     if summary_result.returncode != 0:
