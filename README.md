@@ -36,6 +36,26 @@ python3 src/main.py
 - `--days`: Number of days to analyze (default: 1)
 - `--output`: Output format (console, csv, json, default: console)
 
+## GitHub Actions Automation
+
+This repository includes a GitHub Actions workflow that automatically runs the options tracker daily and commits the results to the repository.
+
+### Setting up GitHub Actions
+
+1. Fork or clone this repository to your GitHub account
+2. Go to your repository settings
+3. Navigate to "Secrets and variables" > "Actions"
+4. Add the following secrets:
+   - `DERIBIT_API_KEY`: Your Deribit API key
+   - `DERIBIT_API_SECRET`: Your Deribit API secret
+5. The workflow will run automatically every day at 00:00 UTC
+6. You can also manually trigger the workflow from the "Actions" tab
+
+The workflow will:
+1. Run the options tracker for both BTC and ETH
+2. Generate CSV files and plots
+3. Commit and push the results to the repository
+
 ## Example Output
 
 The tool will display a summary of options data, including:
