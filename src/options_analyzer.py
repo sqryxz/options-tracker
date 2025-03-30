@@ -832,4 +832,143 @@ class OptionsAnalyzer:
         else:
             plt.show()
         
-        plt.close() 
+        plt.close()
+    
+    def plot_volatility_surface(self, save_path: Optional[str] = None) -> None:
+        """
+        Plot a 3D volatility surface showing implied volatility across strikes and expiries.
+        
+        Args:
+            save_path: Path to save the plot (optional)
+        """
+        df = self.create_options_dataframe()
+        
+        # Filter out rows with missing mark_iv
+        df = df[df["mark_iv"].notna()]
+        
+        if df.empty:
+            print("No implied volatility data available.")
+            return
+        
+        # Convert expiration dates to numerical values (days to expiration)
+        df = df.copy()  # Create a copy to avoid SettingWithCopyWarning
+        
+        # Create the 3D plot
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
+        
+        # Plot surface for calls and puts separately
+        for option_type, color in [("call", "green"), ("put", "red")]:
+            option_data = df[df["option_type"] == option_type]
+            
+            if not option_data.empty:
+                # Create a meshgrid for the surface
+                strikes = np.array(sorted(option_data["strike"].unique()))
+                days = np.array(sorted(option_data["days_to_expiration"].unique()))
+                X, Y = np.meshgrid(strikes, days)
+                
+                # Create Z values (implied volatility)
+                Z = np.zeros_like(X)
+                for i, day in enumerate(days):
+                    for j, strike in enumerate(strikes):
+                        matching_data = option_data[
+                            (option_data["days_to_expiration"] == day) & 
+                            (option_data["strike"] == strike)
+                        ]
+                        if not matching_data.empty:
+                            Z[i, j] = matching_data["mark_iv"].iloc[0]
+                        else:
+                            # Use NaN for missing values
+                            Z[i, j] = np.nan
+                
+                # Plot the surface
+                surf = ax.plot_surface(X, Y, Z, alpha=0.5, cmap=plt.cm.coolwarm, label=option_type.capitalize())
+                surf._facecolors2d = surf._facecolor3d
+                surf._edgecolors2d = surf._edgecolor3d
+        
+        # Add labels and title
+        ax.set_xlabel('Strike Price')
+        ax.set_ylabel('Days to Expiration')
+        ax.set_zlabel('Implied Volatility')
+        ax.set_title(f'{self.data["currency"]} Volatility Surface')
+        
+        # Add legend
+        ax.legend()
+        
+        # Format axes
+        ax.xaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f'${x:,.0f}'))
+        ax.zaxis.set_major_formatter(plt.FuncFormatter(lambda z, _: f'{z:.1%}'))
+        
+        # Save or show the plot
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight')
+        else:
+            plt.show()
+        
+        plt.close()
+    
+    def identify_volatility_skew_hotspots(self, threshold_pct: float = 20.0) -> Dict[str, Any]:
+        """
+        Identify areas of significant volatility skew in the options chain.
+        
+        Args:
+            threshold_pct: Percentage threshold for IV deviation from the mean
+            
+        Returns:
+            Dictionary containing identified hotspots and their characteristics
+        """
+        df = self.create_options_dataframe()
+        
+        # Filter out rows with missing mark_iv
+        df = df[df["mark_iv"].notna()]
+        
+        if df.empty:
+            return {"hotspots": [], "summary": "No implied volatility data available."}
+        
+        hotspots = []
+        
+        # Analyze each expiration date separately
+        for expiry in df["expiration_date"].unique():
+            expiry_data = df[df["expiration_date"] == expiry]
+            
+            # Calculate mean IV for this expiration
+            mean_iv = expiry_data["mark_iv"].mean()
+            
+            # Find strikes with significant IV deviation
+            for option_type in ["call", "put"]:
+                type_data = expiry_data[expiry_data["option_type"] == option_type]
+                
+                for _, row in type_data.iterrows():
+                    iv_deviation_pct = ((row["mark_iv"] - mean_iv) / mean_iv) * 100
+                    
+                    if abs(iv_deviation_pct) >= threshold_pct:
+                        hotspots.append({
+                            "expiration_date": expiry,
+                            "strike": row["strike"],
+                            "option_type": option_type,
+                            "implied_volatility": row["mark_iv"],
+                            "mean_iv": mean_iv,
+                            "deviation_pct": iv_deviation_pct,
+                            "days_to_expiration": row["days_to_expiration"],
+                            "volume": row["volume"],
+                            "open_interest": row["open_interest"]
+                        })
+        
+        # Sort hotspots by absolute deviation percentage
+        hotspots.sort(key=lambda x: abs(x["deviation_pct"]), reverse=True)
+        
+        # Create summary statistics
+        summary = {
+            "total_hotspots": len(hotspots),
+            "max_deviation": max([abs(h["deviation_pct"]) for h in hotspots]) if hotspots else 0,
+            "avg_deviation": np.mean([abs(h["deviation_pct"]) for h in hotspots]) if hotspots else 0,
+            "hotspots_by_type": {
+                "calls": len([h for h in hotspots if h["option_type"] == "call"]),
+                "puts": len([h for h in hotspots if h["option_type"] == "put"])
+            }
+        }
+        
+        return {
+            "hotspots": hotspots,
+            "summary": summary
+        } 

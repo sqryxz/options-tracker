@@ -418,10 +418,39 @@ This report provides a consolidated view of options data for Bitcoin (BTC) and E
     md_content += "The IV spread between different strikes indicates market sentiment about potential price directions. "
     md_content += "A higher IV for out-of-the-money puts compared to calls suggests a bearish skew, while the opposite suggests a bullish skew.\n\n"
     
-    # Add IV comparison plot if available
+    # Add volatility surface section
+    md_content += "### Volatility Surface Analysis\n\n"
+    md_content += "The volatility surface provides a comprehensive view of implied volatility across different strikes and expiration dates. "
+    md_content += "This visualization helps identify potential trading opportunities and market inefficiencies.\n\n"
+    
     if 'iv_comparison' in plot_files:
-        md_content += f"### BTC vs ETH: Implied Volatility Comparison\n\n"
         md_content += f"![Implied Volatility Comparison]({os.path.basename(plot_files['iv_comparison'])})\n\n"
+    
+    # Add volatility skew hotspots section if available
+    if 'hotspots' in summary_data:
+        hotspots = summary_data['hotspots']
+        if isinstance(hotspots, dict) and 'summary' in hotspots:
+            summary = hotspots['summary']
+            md_content += "### Volatility Skew Hotspots\n\n"
+            md_content += f"Total hotspots identified: {summary['total_hotspots']}\n\n"
+            md_content += f"- Maximum deviation: {summary['max_deviation']:.2f}%\n"
+            md_content += f"- Average deviation: {summary['avg_deviation']:.2f}%\n"
+            md_content += f"- Call options hotspots: {summary['hotspots_by_type']['calls']}\n"
+            md_content += f"- Put options hotspots: {summary['hotspots_by_type']['puts']}\n\n"
+            
+            if hotspots['hotspots']:
+                md_content += "#### Notable Volatility Anomalies\n\n"
+                md_content += "| Expiry | Strike | Type | IV | Deviation | Volume | OI |\n"
+                md_content += "|--------|---------|------|-------|-----------|---------|----|\n"
+                
+                # Show top 5 hotspots
+                for spot in hotspots['hotspots'][:5]:
+                    md_content += (f"| {spot['expiration_date']} | ${spot['strike']:,.0f} | "
+                                 f"{spot['option_type'].capitalize()} | {spot['implied_volatility']:.2%} | "
+                                 f"{spot['deviation_pct']:+.2f}% | {spot['volume']:,.0f} | "
+                                 f"{spot['open_interest']:,.0f} |\n")
+                
+                md_content += "\n"
     
     # Add plots
     md_content += "\n## Comparison Charts\n\n"

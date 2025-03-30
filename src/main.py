@@ -231,6 +231,31 @@ def main():
             print(f"Generating segmented open interest plot...")
             analyzer.plot_segmented_open_interest(save_path=segment_path)
             print(f"Saved segmented open interest plot to {segment_path}")
+            
+            # Plot volatility surface
+            vol_surface_path = output_path / f"{currency}_volatility_surface_{timestamp}.png"
+            print(f"Generating volatility surface plot...")
+            analyzer.plot_volatility_surface(save_path=vol_surface_path)
+            print(f"Saved volatility surface plot to {vol_surface_path}")
+            
+            # Analyze volatility skew hotspots
+            print(f"Analyzing volatility skew hotspots...")
+            hotspots = analyzer.identify_volatility_skew_hotspots(threshold_pct=20.0)
+            
+            # Save hotspots to CSV
+            if hotspots["hotspots"]:
+                hotspots_df = pd.DataFrame(hotspots["hotspots"])
+                hotspots_file = output_path / f"{currency}_volatility_hotspots_{timestamp}.csv"
+                hotspots_df.to_csv(hotspots_file, index=False)
+                print(f"Saved volatility hotspots to {hotspots_file}")
+                
+                # Print summary of hotspots
+                print("\nVolatility Skew Hotspots Summary:")
+                print(f"Total hotspots found: {hotspots['summary']['total_hotspots']}")
+                print(f"Maximum deviation: {hotspots['summary']['max_deviation']:.2f}%")
+                print(f"Average deviation: {hotspots['summary']['avg_deviation']:.2f}%")
+                print(f"Calls hotspots: {hotspots['summary']['hotspots_by_type']['calls']}")
+                print(f"Puts hotspots: {hotspots['summary']['hotspots_by_type']['puts']}")
         
         print("Options analysis completed successfully.")
         

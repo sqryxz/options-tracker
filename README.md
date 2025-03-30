@@ -1,78 +1,133 @@
-# Crypto Options Chain Aggregator
+# Crypto Options Analytics Suite
 
-A minimal tool that retrieves and summarizes real-time options data for Bitcoin and Ethereum from the Deribit API. The tool provides insights on open interest, implied volatility, and generates daily summaries highlighting the largest changes in calls and puts.
+A comprehensive analytics tool for cryptocurrency options markets, featuring advanced volatility surface analysis and market inefficiency detection.
 
 ## Features
 
-- Fetch real-time options data from Deribit API
-- Track open interest and implied volatility
-- Generate daily summaries of options data
-- Identify significant changes in calls/puts
+### Core Analytics
+- Real-time options chain data processing for BTC and ETH
+- Open interest and volume tracking across strikes and expiries
+- Put/call ratio analysis with temporal segmentation
+- Automated report generation in both Markdown and PDF formats
 
-## Setup
+### Advanced Volatility Analysis
+- 3D volatility surface visualization
+- Volatility skew hotspot detection
+- Implied volatility smile construction
+- Market inefficiency identification
 
-1. Clone this repository
-2. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
-3. Create a `.env` file with your Deribit API credentials (optional):
-   ```
-   DERIBIT_API_KEY=your_api_key
-   DERIBIT_API_SECRET=your_api_secret
-   ```
+### Data Visualization
+- Interactive 3D surface plots
+- Open interest heatmaps
+- Segmented market analysis charts
+- Comparative BTC/ETH analytics
+
+### Export Capabilities
+- Structured CSV data exports
+- High-resolution plot generation
+- Consolidated market reports
+- Volatility anomaly tracking
+
+## Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/options-tracker.git
+cd options-tracker
+
+# Create a virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
 
 ## Usage
 
-Run the main script to fetch and analyze options data:
+### Basic Analysis
+```bash
+python3 src/main.py --currency BTC --plot --output csv
+```
+
+### Generate Consolidated Report
+```bash
+python3 src/consolidated_summary.py --markdown --pdf
+```
+
+### Command Line Arguments
+- `--currency`: Specify the cryptocurrency (BTC or ETH)
+- `--plot`: Generate visualization plots
+- `--output`: Output format (csv, json)
+- `--markdown`: Generate markdown report
+- `--pdf`: Generate PDF report
+
+## Output Structure
 
 ```
-python3 src/main.py
+output/
+├── consolidated_report_[timestamp].md
+├── consolidated_report_[timestamp].pdf
+├── [currency]_volatility_surface_[timestamp].png
+├── [currency]_volatility_hotspots_[timestamp].csv
+├── [currency]_open_interest_[timestamp].csv
+└── ...
 ```
 
-## Options
+## Volatility Surface Analysis
 
-- `--currency`: Specify the cryptocurrency (BTC or ETH, default: BTC)
-- `--days`: Number of days to analyze (default: 1)
-- `--output`: Output format (console, csv, json, default: console)
+The volatility surface module provides a comprehensive view of options market dynamics:
 
-## GitHub Actions Automation
+1. **Surface Construction**
+   - 3D visualization of implied volatility
+   - Strike price and expiry date mapping
+   - Separate call/put surface rendering
 
-This repository includes a GitHub Actions workflow that automatically runs the options tracker daily and commits the results to the repository.
+2. **Hotspot Detection**
+   - Automated anomaly identification
+   - Configurable deviation thresholds
+   - Statistical significance testing
 
-### Setting up GitHub Actions
+3. **Market Inefficiency Analysis**
+   - Volatility skew pattern recognition
+   - Temporal volatility evolution tracking
+   - Cross-expiry volatility comparison
 
-1. Fork or clone this repository to your GitHub account
-2. Go to your repository settings
-3. Navigate to "Secrets and variables" > "Actions"
-4. Add the following secrets:
-   - `DERIBIT_API_KEY`: Your Deribit API key
-   - `DERIBIT_API_SECRET`: Your Deribit API secret
-   - `ACTIONS_PAT`: A Personal Access Token with repo scope (see instructions below)
-5. The workflow will run automatically every day at 00:00 UTC
-6. You can also manually trigger the workflow from the "Actions" tab
+## Sample Output
 
-### Creating a Personal Access Token (PAT)
+### Volatility Surface
+```
+Analyzing volatility skew hotspots...
+Total hotspots found: 148
+Maximum deviation: 84.77%
+Average deviation: 33.05%
+Calls hotspots: 74
+Puts hotspots: 74
+```
 
-To allow GitHub Actions to push changes to your repository, you need to create a Personal Access Token:
+## Dependencies
 
-1. Go to your GitHub account settings
-2. Navigate to "Developer settings" > "Personal access tokens" > "Tokens (classic)"
-3. Click "Generate new token" > "Generate new token (classic)"
-4. Give it a descriptive name like "Options Tracker Workflow"
-5. Select the "repo" scope to allow the token to push to your repositories
-6. Click "Generate token" and copy the token
-7. Add this token as a repository secret named `ACTIONS_PAT`
+- Python 3.8+
+- NumPy
+- Pandas
+- Matplotlib
+- Seaborn
+- tabulate
 
-The workflow will:
-1. Run the options tracker for both BTC and ETH
-2. Generate CSV files and plots
-3. Commit and push the results to the repository
+## Contributing
 
-## Example Output
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-The tool will display a summary of options data, including:
-- Current open interest for calls and puts
-- Implied volatility across different strike prices
-- Largest daily changes in open interest
-- Volume analysis for different expiration dates 
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Deribit API for options data
+- Matplotlib for 3D surface visualization
+- Seaborn for statistical visualizations 
