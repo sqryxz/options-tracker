@@ -1,2 +1,0 @@
-timestamp,currency,current_price,total_open_interest,calls_open_interest,puts_open_interest,put_call_ratio,total_volume,calls_volume,puts_volume,volume_put_call_ratio,average_iv,min_iv,max_iv
-2025-03-16T18:49:00.709350,ETH,1908.15,2115924.0,1420663.0,695261.0,0.48939192475625815,22902.0,13077.0,9825.0,0.7513191098875889,85.84713375796179,48.33,191.44
