@@ -20,6 +20,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 import numpy as np
+from tabulate import tabulate
 
 def parse_arguments():
     """Parse command line arguments."""
@@ -377,162 +378,275 @@ def print_consolidated_summary(consolidated):
     
     print("\n" + "="*80)
 
-def generate_markdown_report(summary_data, plot_files, output_dir):
-    """Generate a comprehensive markdown report."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_date = datetime.now().strftime("%Y-%m-%d")
+def generate_markdown_report(data, plot_files, output_dir):
+    """Generate a markdown report with the consolidated analysis."""
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    report_file = os.path.join(output_dir, f'consolidated_report_{timestamp}.md')
     
-    consolidated = summary_data['consolidated']
-    high_volume = summary_data.get('high_volume')
-    put_call = summary_data.get('put_call')
-    
-    # Start building the markdown content
-    md_content = f"""# Consolidated Crypto Options Summary - {report_date}
+    with open(report_file, 'w') as f:
+        # Title
+        f.write(f"# Consolidated Crypto Options Summary - {datetime.now().strftime('%Y-%m-%d')}\n\n")
+        
+        # Overview
+        f.write("## Overview\n\n")
+        f.write("This report provides a consolidated view of options data for Bitcoin (BTC) and Ethereum (ETH).\n\n")
+        
+        # Summary Statistics
+        f.write("## Summary Statistics\n\n")
+        stats_table = tabulate(data['consolidated'], headers='keys', tablefmt='pipe', floatfmt='.2f')
+        f.write(f"{stats_table}\n\n")
+        
+        # Implied Volatility Analysis
+        f.write("## Implied Volatility Analysis\n\n")
+        f.write("Implied volatility (IV) represents the market's expectation of future price movement and volatility. ")
+        f.write("Higher IV indicates greater expected price movement and typically higher option premiums.\n\n")
+        
+        # Extract IV metrics from consolidated data
+        btc_avg_iv = next((row['BTC'] for _, row in data['consolidated'].iterrows() if row['Metric'] == 'Average IV'), 'N/A')
+        eth_avg_iv = next((row['ETH'] for _, row in data['consolidated'].iterrows() if row['Metric'] == 'Average IV'), 'N/A')
+        
+        f.write(f"- **BTC Average IV**: {btc_avg_iv}\n")
+        f.write(f"- **ETH Average IV**: {eth_avg_iv}\n\n")
+        
+        f.write("The IV spread between different strikes indicates market sentiment about potential price directions. ")
+        f.write("A higher IV for out-of-the-money puts compared to calls suggests a bearish skew, while the opposite suggests a bullish skew.\n\n")
 
-## Overview
+        # New Section: Volatility Skew Analytics
+        f.write("### Volatility Skew Analytics\n\n")
+        
+        # BTC Skew Analysis
+        f.write("#### Bitcoin (BTC) Skew Analysis\n\n")
+        btc_skew = calculate_skew_metrics('BTC', output_dir)
+        f.write("**Put/Call Skew Metrics:**\n")
+        f.write(f"- 25-Delta Put/Call Skew: {btc_skew['25d_skew']:.2f}%\n")
+        f.write(f"- 10-Delta Put/Call Skew: {btc_skew['10d_skew']:.2f}%\n")
+        f.write(f"- ATM Volatility: {btc_skew['atm_vol']:.2f}%\n")
+        f.write(f"- Term Structure Slope: {btc_skew['term_slope']:.2f}%\n\n")
+        
+        # ETH Skew Analysis
+        f.write("#### Ethereum (ETH) Skew Analysis\n\n")
+        eth_skew = calculate_skew_metrics('ETH', output_dir)
+        f.write("**Put/Call Skew Metrics:**\n")
+        f.write(f"- 25-Delta Put/Call Skew: {eth_skew['25d_skew']:.2f}%\n")
+        f.write(f"- 10-Delta Put/Call Skew: {eth_skew['10d_skew']:.2f}%\n")
+        f.write(f"- ATM Volatility: {eth_skew['atm_vol']:.2f}%\n")
+        f.write(f"- Term Structure Slope: {eth_skew['term_slope']:.2f}%\n\n")
+        
+        # Volatility Surface Analysis
+        f.write("### Volatility Surface Analysis\n\n")
+        f.write("The volatility surface provides a comprehensive view of implied volatility across different strikes and expiration dates. ")
+        f.write("This visualization helps identify potential trading opportunities and market inefficiencies.\n\n")
+        
+        # BTC Volatility Surface
+        f.write("#### Bitcoin (BTC) Volatility Surface\n\n")
+        btc_surface_file = None
+        for key, path in plot_files.items():
+            if 'BTC_volatility_surface' in path:
+                btc_surface_file = os.path.basename(path)
+                break
+        if btc_surface_file:
+            f.write(f"![BTC Volatility Surface]({btc_surface_file})\n\n")
+        
+        # ETH Volatility Surface
+        f.write("#### Ethereum (ETH) Volatility Surface\n\n")
+        eth_surface_file = None
+        for key, path in plot_files.items():
+            if 'ETH_volatility_surface' in path:
+                eth_surface_file = os.path.basename(path)
+                break
+        if eth_surface_file:
+            f.write(f"![ETH Volatility Surface]({eth_surface_file})\n\n")
+        
+        # Implied Volatility Comparison
+        f.write("### Implied Volatility Comparison\n\n")
+        iv_comparison_file = None
+        for key, path in plot_files.items():
+            if 'iv_comparison' in path:
+                iv_comparison_file = os.path.basename(path)
+                break
+        if iv_comparison_file:
+            f.write(f"![Implied Volatility Comparison]({iv_comparison_file})\n\n")
+        
+        # Volatility Hotspots Summary
+        f.write("### Volatility Skew Hotspots\n\n")
+        f.write("#### BTC Volatility Hotspots\n")
+        btc_hotspots = analyze_volatility_hotspots('BTC', output_dir)
+        f.write(f"- Total hotspots identified: {btc_hotspots['total']}\n")
+        f.write(f"- Maximum deviation: {btc_hotspots['max_dev']:.2f}%\n")
+        f.write(f"- Average deviation: {btc_hotspots['avg_dev']:.2f}%\n")
+        f.write(f"- Call-side hotspots: {btc_hotspots['calls']}\n")
+        f.write(f"- Put-side hotspots: {btc_hotspots['puts']}\n")
+        f.write(f"- Most active strikes: {', '.join(f'${x:,}' for x in btc_hotspots['active_strikes'])}\n\n")
+        
+        f.write("#### ETH Volatility Hotspots\n")
+        eth_hotspots = analyze_volatility_hotspots('ETH', output_dir)
+        f.write(f"- Total hotspots identified: {eth_hotspots['total']}\n")
+        f.write(f"- Maximum deviation: {eth_hotspots['max_dev']:.2f}%\n")
+        f.write(f"- Average deviation: {eth_hotspots['avg_dev']:.2f}%\n")
+        f.write(f"- Call-side hotspots: {eth_hotspots['calls']}\n")
+        f.write(f"- Put-side hotspots: {eth_hotspots['puts']}\n")
+        f.write(f"- Most active strikes: {', '.join(f'${x:,}' for x in eth_hotspots['active_strikes'])}\n\n")
 
-This report provides a consolidated view of options data for Bitcoin (BTC) and Ethereum (ETH).
+        # Comparison Charts
+        f.write("## Comparison Charts\n\n")
+        f.write("### BTC vs ETH: Key Ratios Comparison\n\n")
+        ratios_comparison_file = None
+        for key, path in plot_files.items():
+            if 'ratios_comparison' in path:
+                ratios_comparison_file = os.path.basename(path)
+                break
+        if ratios_comparison_file:
+            f.write(f"![BTC vs ETH Ratios]({ratios_comparison_file})\n\n")
+        
+        f.write("### Put/Call Ratio by Expiration Date\n\n")
+        pc_comparison_file = None
+        for key, path in plot_files.items():
+            if 'put_call_comparison' in path:
+                pc_comparison_file = os.path.basename(path)
+                break
+        if pc_comparison_file:
+            f.write(f"![Put/Call Ratio by Expiration]({pc_comparison_file})\n\n")
+        
+        # High Volume Strikes
+        f.write("\n## High Volume Strikes\n\n")
+        f.write("### BTC High Volume Strikes\n\n")
+        btc_volume_table = tabulate(data['high_volume'][data['high_volume']['currency'] == 'BTC'].head(), 
+                                  headers='keys', tablefmt='pipe', floatfmt='.2f')
+        f.write(f"{btc_volume_table}\n\n")
+        
+        f.write("### ETH High Volume Strikes\n\n")
+        eth_volume_table = tabulate(data['high_volume'][data['high_volume']['currency'] == 'ETH'].head(), 
+                                  headers='keys', tablefmt='pipe', floatfmt='.2f')
+        f.write(f"{eth_volume_table}\n\n")
+        
+        # Put/Call Ratio by Expiration
+        f.write("## Put/Call Ratio by Expiration\n\n")
+        f.write("### BTC Put/Call Ratio by Expiration\n\n")
+        btc_pc_table = tabulate(data['put_call'][data['put_call']['currency'] == 'BTC'], 
+                              headers='keys', tablefmt='pipe', floatfmt='.2f')
+        f.write(f"{btc_pc_table}\n\n")
+        
+        f.write("### ETH Put/Call Ratio by Expiration\n\n")
+        eth_pc_table = tabulate(data['put_call'][data['put_call']['currency'] == 'ETH'], 
+                              headers='keys', tablefmt='pipe', floatfmt='.2f')
+        f.write(f"{eth_pc_table}\n\n")
+        
+        # Footer
+        f.write("\n---\n\n")
+        f.write(f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    
+    print(f"Saved markdown report to {report_file}")
+    return report_file
 
-## Summary Statistics
+def calculate_skew_metrics(currency, output_dir):
+    """Calculate volatility skew metrics for a given currency."""
+    # Read volatility data
+    timestamp = get_latest_timestamp(output_dir, currency)
+    vol_file = os.path.join(output_dir, f'{currency}_volatility_hotspots_{timestamp}.csv')
+    
+    if not os.path.exists(vol_file):
+        return {
+            '25d_skew': 0.0,
+            '10d_skew': 0.0,
+            'atm_vol': 0.0,
+            'term_slope': 0.0
+        }
+    
+    df = pd.read_csv(vol_file)
+    
+    # Calculate ATM volatility (using closest to current price)
+    current_price = get_current_price(currency, output_dir)
+    atm_options = df[abs(df['strike'] - current_price) < current_price * 0.05]
+    atm_vol = atm_options['implied_volatility'].mean() if not atm_options.empty else 0.0
+    
+    # Calculate 25-delta skew (approximately 25% OTM puts vs calls)
+    otm_25d_puts = df[(df['option_type'] == 'put') & 
+                      (df['strike'] <= current_price * 0.75)]['implied_volatility'].mean()
+    otm_25d_calls = df[(df['option_type'] == 'call') & 
+                       (df['strike'] >= current_price * 1.25)]['implied_volatility'].mean()
+    skew_25d = otm_25d_puts - otm_25d_calls if not (np.isnan(otm_25d_puts) or np.isnan(otm_25d_calls)) else 0.0
+    
+    # Calculate 10-delta skew (approximately 10% OTM puts vs calls)
+    otm_10d_puts = df[(df['option_type'] == 'put') & 
+                      (df['strike'] <= current_price * 0.90)]['implied_volatility'].mean()
+    otm_10d_calls = df[(df['option_type'] == 'call') & 
+                       (df['strike'] >= current_price * 1.10)]['implied_volatility'].mean()
+    skew_10d = otm_10d_puts - otm_10d_calls if not (np.isnan(otm_10d_puts) or np.isnan(otm_10d_calls)) else 0.0
+    
+    # Calculate term structure slope
+    df['days_to_expiry'] = pd.to_numeric(df['days_to_expiration'])
+    near_term = df[df['days_to_expiry'] <= 30]['implied_volatility'].mean()
+    far_term = df[df['days_to_expiry'] > 180]['implied_volatility'].mean()
+    term_slope = (far_term - near_term) / near_term * 100 if not (np.isnan(near_term) or np.isnan(far_term)) else 0.0
+    
+    return {
+        '25d_skew': skew_25d,
+        '10d_skew': skew_10d,
+        'atm_vol': atm_vol,
+        'term_slope': term_slope
+    }
 
-| Metric | BTC | ETH |
-|--------|-----|-----|
-"""
+def get_current_price(currency, output_dir):
+    """Get the current price for a currency from summary stats."""
+    timestamp = get_latest_timestamp(output_dir, currency)
+    stats_file = os.path.join(output_dir, f'{currency}_summary_stats_{timestamp}.csv')
     
-    # Add each row from the consolidated DataFrame
-    for _, row in consolidated.iterrows():
-        md_content += f"| {row['Metric']} | {row['BTC']} | {row['ETH']} |\n"
+    if os.path.exists(stats_file):
+        df = pd.read_csv(stats_file)
+        if 'current_price' in df.columns:
+            return float(df['current_price'].iloc[0])
+    return 0.0
+
+def get_latest_timestamp(output_dir, currency):
+    """Get the latest timestamp from files for a given currency."""
+    pattern = os.path.join(output_dir, f'{currency}_*')
+    files = glob.glob(pattern)
+    if not files:
+        return None
     
-    # Add implied volatility section
-    md_content += "\n## Implied Volatility Analysis\n\n"
-    md_content += "Implied volatility (IV) represents the market's expectation of future price movement and volatility. "
-    md_content += "Higher IV indicates greater expected price movement and typically higher option premiums.\n\n"
+    timestamps = []
+    for file in files:
+        match = re.search(r'\d{8}_\d{6}', file)
+        if match:
+            timestamps.append(match.group())
     
-    # Extract IV metrics from consolidated data
-    btc_avg_iv = next((row['BTC'] for _, row in consolidated.iterrows() if row['Metric'] == 'Average IV'), 'N/A')
-    eth_avg_iv = next((row['ETH'] for _, row in consolidated.iterrows() if row['Metric'] == 'Average IV'), 'N/A')
+    return max(timestamps) if timestamps else None
+
+def analyze_volatility_hotspots(currency, output_dir):
+    """Analyze volatility hotspots for a given currency."""
+    timestamp = get_latest_timestamp(output_dir, currency)
+    hotspots_file = os.path.join(output_dir, f'{currency}_volatility_hotspots_{timestamp}.csv')
     
-    md_content += f"- **BTC Average IV**: {btc_avg_iv}\n"
-    md_content += f"- **ETH Average IV**: {eth_avg_iv}\n\n"
+    if not os.path.exists(hotspots_file):
+        return {
+            'total': 0,
+            'max_dev': 0.0,
+            'avg_dev': 0.0,
+            'calls': 0,
+            'puts': 0,
+            'active_strikes': []
+        }
     
-    md_content += "The IV spread between different strikes indicates market sentiment about potential price directions. "
-    md_content += "A higher IV for out-of-the-money puts compared to calls suggests a bearish skew, while the opposite suggests a bullish skew.\n\n"
+    df = pd.read_csv(hotspots_file)
     
-    # Add volatility surface section
-    md_content += "### Volatility Surface Analysis\n\n"
-    md_content += "The volatility surface provides a comprehensive view of implied volatility across different strikes and expiration dates. "
-    md_content += "This visualization helps identify potential trading opportunities and market inefficiencies.\n\n"
+    # Calculate metrics
+    total = len(df)
+    max_dev = df['deviation_pct'].abs().max()
+    avg_dev = df['deviation_pct'].abs().mean()
+    calls = len(df[df['option_type'] == 'call'])
+    puts = len(df[df['option_type'] == 'put'])
     
-    # Add BTC volatility surface
-    md_content += "#### Bitcoin (BTC) Volatility Surface\n\n"
-    btc_vol_surface = next((f for f in os.listdir('output') if f.startswith('BTC_volatility_surface_') and f.endswith('.png')), None)
-    if btc_vol_surface:
-        md_content += f"![BTC Volatility Surface]({btc_vol_surface})\n\n"
+    # Find most active strikes by volume
+    active_strikes = df.nlargest(5, 'volume')['strike'].unique().tolist()
     
-    # Add ETH volatility surface
-    md_content += "#### Ethereum (ETH) Volatility Surface\n\n"
-    eth_vol_surface = next((f for f in os.listdir('output') if f.startswith('ETH_volatility_surface_') and f.endswith('.png')), None)
-    if eth_vol_surface:
-        md_content += f"![ETH Volatility Surface]({eth_vol_surface})\n\n"
-    
-    # Add IV comparison plot
-    md_content += "### Implied Volatility Comparison\n\n"
-    if 'iv_comparison' in plot_files:
-        md_content += f"![Implied Volatility Comparison]({os.path.basename(plot_files['iv_comparison'])})\n\n"
-    
-    # Add volatility skew hotspots section if available
-    if 'hotspots' in summary_data:
-        hotspots = summary_data['hotspots']
-        if isinstance(hotspots, dict) and 'summary' in hotspots:
-            summary = hotspots['summary']
-            md_content += "### Volatility Skew Hotspots\n\n"
-            md_content += f"Total hotspots identified: {summary['total_hotspots']}\n\n"
-            md_content += f"- Maximum deviation: {summary['max_deviation']:.2f}%\n"
-            md_content += f"- Average deviation: {summary['avg_deviation']:.2f}%\n"
-            md_content += f"- Call options hotspots: {summary['hotspots_by_type']['calls']}\n"
-            md_content += f"- Put options hotspots: {summary['hotspots_by_type']['puts']}\n\n"
-            
-            if hotspots['hotspots']:
-                md_content += "#### Notable Volatility Anomalies\n\n"
-                md_content += "| Expiry | Strike | Type | IV | Deviation | Volume | OI |\n"
-                md_content += "|--------|---------|------|-------|-----------|---------|----|\n"
-                
-                # Show top 5 hotspots
-                for spot in hotspots['hotspots'][:5]:
-                    md_content += (f"| {spot['expiration_date']} | ${spot['strike']:,.0f} | "
-                                 f"{spot['option_type'].capitalize()} | {spot['implied_volatility']:.2%} | "
-                                 f"{spot['deviation_pct']:+.2f}% | {spot['volume']:,.0f} | "
-                                 f"{spot['open_interest']:,.0f} |\n")
-                
-                md_content += "\n"
-    
-    # Add plots
-    md_content += "\n## Comparison Charts\n\n"
-    
-    if 'ratios' in plot_files:
-        md_content += f"### BTC vs ETH: Key Ratios Comparison\n\n"
-        md_content += f"![BTC vs ETH Ratios]({os.path.basename(plot_files['ratios'])})\n\n"
-    
-    if 'put_call' in plot_files:
-        md_content += f"### Put/Call Ratio by Expiration Date\n\n"
-        md_content += f"![Put/Call Ratio by Expiration]({os.path.basename(plot_files['put_call'])})\n\n"
-    
-    # Add high volume strikes if available
-    if high_volume is not None:
-        md_content += "\n## High Volume Strikes\n\n"
-        md_content += "### BTC High Volume Strikes\n\n"
-        
-        btc_high_volume = high_volume[high_volume['currency'] == 'BTC'].sort_values('volume', ascending=False).head(5)
-        md_content += "| Strike | Volume | Distance from Current Price |\n"
-        md_content += "|--------|--------|----------------------------|\n"
-        
-        for _, row in btc_high_volume.iterrows():
-            md_content += f"| ${row['strike']:,.0f} | {row['volume']:,.0f} | {row['distance_pct']:.2f}% |\n"
-        
-        md_content += "\n### ETH High Volume Strikes\n\n"
-        
-        eth_high_volume = high_volume[high_volume['currency'] == 'ETH'].sort_values('volume', ascending=False).head(5)
-        md_content += "| Strike | Volume | Distance from Current Price |\n"
-        md_content += "|--------|--------|----------------------------|\n"
-        
-        for _, row in eth_high_volume.iterrows():
-            md_content += f"| ${row['strike']:,.0f} | {row['volume']:,.0f} | {row['distance_pct']:.2f}% |\n"
-    
-    # Add put/call ratio by expiry if available
-    if put_call is not None:
-        md_content += "\n## Put/Call Ratio by Expiration\n\n"
-        
-        # Convert to datetime for sorting
-        put_call['expiration_date'] = pd.to_datetime(put_call['expiration_date'])
-        
-        # Group by currency and sort by date
-        btc_put_call = put_call[put_call['currency'] == 'BTC'].sort_values('expiration_date')
-        eth_put_call = put_call[put_call['currency'] == 'ETH'].sort_values('expiration_date')
-        
-        md_content += "### BTC Put/Call Ratio by Expiration\n\n"
-        md_content += "| Expiration Date | Put/Call Ratio |\n"
-        md_content += "|-----------------|----------------|\n"
-        
-        for _, row in btc_put_call.iterrows():
-            md_content += f"| {row['expiration_date'].strftime('%Y-%m-%d')} | {row['put_call_ratio']:.2f} |\n"
-        
-        md_content += "\n### ETH Put/Call Ratio by Expiration\n\n"
-        md_content += "| Expiration Date | Put/Call Ratio |\n"
-        md_content += "|-----------------|----------------|\n"
-        
-        for _, row in eth_put_call.iterrows():
-            md_content += f"| {row['expiration_date'].strftime('%Y-%m-%d')} | {row['put_call_ratio']:.2f} |\n"
-    
-    # Add footer
-    md_content += f"\n\n---\n\nReport generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
-    
-    # Write the markdown file
-    md_file = os.path.join(output_dir, f"consolidated_report_{timestamp}.md")
-    with open(md_file, "w") as f:
-        f.write(md_content)
-    
-    print(f"Saved markdown report to {md_file}")
-    return md_file
+    return {
+        'total': total,
+        'max_dev': max_dev,
+        'avg_dev': avg_dev,
+        'calls': calls,
+        'puts': puts,
+        'active_strikes': active_strikes
+    }
 
 def generate_pdf_report(md_file, plot_files, output_dir):
     """Generate a PDF report from the markdown file."""
