@@ -636,20 +636,39 @@ def generate_pdf_report(md_file, plot_files, output_dir):
         
         # Image
         elif line.startswith('!['):
-            # Extract image path
-            image_path = line.split('(')[1].split(')')[0]
-            
-            # Find the actual image path from plot_files
-            actual_path = None
-            for _, path in plot_files.items():
-                if os.path.basename(path) == image_path:
-                    actual_path = path
-                    break
-            
-            if actual_path and os.path.exists(actual_path):
-                img = Image(actual_path, width=6*inch, height=4*inch)
-                elements.append(img)
-                elements.append(Spacer(1, 0.2 * inch))
+            try:
+                # Extract image path and description
+                img_desc = line[2:].split(']')[0]
+                img_path = line.split('(')[1].split(')')[0]
+                
+                # First try to find the image in plot_files
+                actual_path = None
+                for _, path in plot_files.items():
+                    if os.path.basename(path) == img_path:
+                        actual_path = path
+                        break
+                
+                # If not found in plot_files, check in output directory
+                if not actual_path:
+                    potential_path = os.path.join(output_dir, img_path)
+                    if os.path.exists(potential_path):
+                        actual_path = potential_path
+                
+                if actual_path and os.path.exists(actual_path):
+                    # Add image description
+                    elements.append(Paragraph(img_desc, styles['Italic']))
+                    elements.append(Spacer(1, 0.1 * inch))
+                    
+                    # Add image with proper scaling
+                    img = Image(actual_path)
+                    # Scale image to fit page width while maintaining aspect ratio
+                    aspect = img.imageHeight / float(img.imageWidth)
+                    img.drawWidth = 6 * inch
+                    img.drawHeight = 6 * inch * aspect
+                    elements.append(img)
+                    elements.append(Spacer(1, 0.3 * inch))
+            except Exception as e:
+                print(f"Warning: Failed to process image {img_path}: {str(e)}")
         
         # Normal paragraph
         elif line and not line.startswith('---'):
