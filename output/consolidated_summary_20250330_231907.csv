@@ -1,0 +1,13 @@
+Metric,BTC,ETH
+Current Price,"$82,956.60","$1,819.14"
+Total Open Interest,"198,054","1,323,127"
+Calls Open Interest,"124,841","778,679"
+Puts Open Interest,"73,213","544,448"
+Put/Call Ratio,0.59,0.70
+Total Volume,"5,857","107,517"
+Calls Volume,"3,029","58,562"
+Puts Volume,"2,828","48,955"
+Volume Put/Call Ratio,0.93,0.84
+Average IV,6050.31%,7956.12%
+Min IV,4427.00%,6146.00%
+Max IV,11321.00%,16168.00%
