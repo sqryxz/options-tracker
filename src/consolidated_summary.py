@@ -423,6 +423,20 @@ This report provides a consolidated view of options data for Bitcoin (BTC) and E
     md_content += "The volatility surface provides a comprehensive view of implied volatility across different strikes and expiration dates. "
     md_content += "This visualization helps identify potential trading opportunities and market inefficiencies.\n\n"
     
+    # Add BTC volatility surface
+    md_content += "#### Bitcoin (BTC) Volatility Surface\n\n"
+    btc_vol_surface = next((f for f in os.listdir('output') if f.startswith('BTC_volatility_surface_') and f.endswith('.png')), None)
+    if btc_vol_surface:
+        md_content += f"![BTC Volatility Surface]({btc_vol_surface})\n\n"
+    
+    # Add ETH volatility surface
+    md_content += "#### Ethereum (ETH) Volatility Surface\n\n"
+    eth_vol_surface = next((f for f in os.listdir('output') if f.startswith('ETH_volatility_surface_') and f.endswith('.png')), None)
+    if eth_vol_surface:
+        md_content += f"![ETH Volatility Surface]({eth_vol_surface})\n\n"
+    
+    # Add IV comparison plot
+    md_content += "### Implied Volatility Comparison\n\n"
     if 'iv_comparison' in plot_files:
         md_content += f"![Implied Volatility Comparison]({os.path.basename(plot_files['iv_comparison'])})\n\n"
     
