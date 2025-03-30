@@ -383,6 +383,26 @@ def generate_markdown_report(data, plot_files, output_dir):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     report_file = os.path.join(output_dir, f'consolidated_report_{timestamp}.md')
     
+    # Find volatility surface plots
+    btc_surface_file = None
+    eth_surface_file = None
+    for key, path in plot_files.items():
+        if 'BTC_volatility_surface' in path:
+            btc_surface_file = os.path.basename(path)
+        elif 'ETH_volatility_surface' in path:
+            eth_surface_file = os.path.basename(path)
+    
+    # If not in plot_files, search in output directory
+    if not btc_surface_file:
+        btc_files = glob.glob(os.path.join(output_dir, 'BTC_volatility_surface_*.png'))
+        if btc_files:
+            btc_surface_file = os.path.basename(max(btc_files, key=os.path.getmtime))
+    
+    if not eth_surface_file:
+        eth_files = glob.glob(os.path.join(output_dir, 'ETH_volatility_surface_*.png'))
+        if eth_files:
+            eth_surface_file = os.path.basename(max(eth_files, key=os.path.getmtime))
+    
     with open(report_file, 'w') as f:
         # Title
         f.write(f"# Consolidated Crypto Options Summary - {datetime.now().strftime('%Y-%m-%d')}\n\n")
@@ -411,7 +431,7 @@ def generate_markdown_report(data, plot_files, output_dir):
         f.write("The IV spread between different strikes indicates market sentiment about potential price directions. ")
         f.write("A higher IV for out-of-the-money puts compared to calls suggests a bearish skew, while the opposite suggests a bullish skew.\n\n")
 
-        # New Section: Volatility Skew Analytics
+        # Volatility Skew Analytics
         f.write("### Volatility Skew Analytics\n\n")
         
         # BTC Skew Analysis
@@ -439,23 +459,17 @@ def generate_markdown_report(data, plot_files, output_dir):
         
         # BTC Volatility Surface
         f.write("#### Bitcoin (BTC) Volatility Surface\n\n")
-        btc_surface_file = None
-        for key, path in plot_files.items():
-            if 'BTC_volatility_surface' in path:
-                btc_surface_file = os.path.basename(path)
-                break
         if btc_surface_file:
             f.write(f"![BTC Volatility Surface]({btc_surface_file})\n\n")
+            f.write("The BTC volatility surface shows the relationship between implied volatility, strike prices, and time to expiration. ")
+            f.write("Areas of high implied volatility (peaks) indicate where the market expects significant price movement potential.\n\n")
         
         # ETH Volatility Surface
         f.write("#### Ethereum (ETH) Volatility Surface\n\n")
-        eth_surface_file = None
-        for key, path in plot_files.items():
-            if 'ETH_volatility_surface' in path:
-                eth_surface_file = os.path.basename(path)
-                break
         if eth_surface_file:
             f.write(f"![ETH Volatility Surface]({eth_surface_file})\n\n")
+            f.write("The ETH volatility surface illustrates the term structure and strike dependence of implied volatilities. ")
+            f.write("Steeper sections suggest stronger directional expectations in those price regions.\n\n")
         
         # Implied Volatility Comparison
         f.write("### Implied Volatility Comparison\n\n")
@@ -755,32 +769,58 @@ def generate_pdf_report(md_file, plot_files, output_dir):
                 img_desc = line[2:].split(']')[0]
                 img_path = line.split('(')[1].split(')')[0]
                 
-                # First try to find the image in plot_files
-                actual_path = None
+                # Search for the image in multiple locations
+                image_locations = [
+                    img_path,  # Direct path
+                    os.path.join(output_dir, img_path),  # In output directory
+                    os.path.join(output_dir, os.path.basename(img_path)),  # Just filename in output dir
+                ]
+                
+                # Add paths from plot_files
                 for _, path in plot_files.items():
-                    if os.path.basename(path) == img_path:
-                        actual_path = path
+                    if os.path.basename(path) == os.path.basename(img_path):
+                        image_locations.append(path)
+                    # Also check for volatility surface files
+                    if ('volatility_surface' in img_path and 
+                        ('BTC_volatility_surface' in path or 'ETH_volatility_surface' in path)):
+                        image_locations.append(path)
+                
+                # Try each possible location
+                actual_path = None
+                for loc in image_locations:
+                    if os.path.exists(loc):
+                        actual_path = loc
                         break
                 
-                # If not found in plot_files, check in output directory
-                if not actual_path:
-                    potential_path = os.path.join(output_dir, img_path)
-                    if os.path.exists(potential_path):
-                        actual_path = potential_path
-                
-                if actual_path and os.path.exists(actual_path):
+                if actual_path:
                     # Add image description
                     elements.append(Paragraph(img_desc, styles['Italic']))
                     elements.append(Spacer(1, 0.1 * inch))
                     
                     # Add image with proper scaling
                     img = Image(actual_path)
-                    # Scale image to fit page width while maintaining aspect ratio
-                    aspect = img.imageHeight / float(img.imageWidth)
-                    img.drawWidth = 6 * inch
-                    img.drawHeight = 6 * inch * aspect
+                    
+                    # Get the available width (accounting for margins)
+                    available_width = doc.width
+                    
+                    # Calculate scaling factor to fit width while maintaining aspect ratio
+                    scale_factor = available_width / img.imageWidth
+                    
+                    # Set new dimensions
+                    img.drawWidth = img.imageWidth * scale_factor
+                    img.drawHeight = img.imageHeight * scale_factor
+                    
+                    # If height is too large, scale down further
+                    max_height = doc.height * 0.75  # Use 75% of page height as maximum
+                    if img.drawHeight > max_height:
+                        height_scale = max_height / img.drawHeight
+                        img.drawWidth *= height_scale
+                        img.drawHeight = max_height
+                    
                     elements.append(img)
                     elements.append(Spacer(1, 0.3 * inch))
+                else:
+                    print(f"Warning: Could not find image {img_path} in any location")
             except Exception as e:
                 print(f"Warning: Failed to process image {img_path}: {str(e)}")
         
